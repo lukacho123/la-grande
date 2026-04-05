@@ -1,0 +1,240 @@
+.about {
+  padding: 120px 40px;
+  background: var(--cream);
+  position: relative;
+  overflow: hidden;
+}
+
+.about::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(201, 168, 76, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+/* Visual column */
+.visual {
+  position: relative;
+}
+
+.visualBox {
+  position: relative;
+  width: 100%;
+  padding-bottom: 90%;
+  background: linear-gradient(135deg, var(--cream-dark) 0%, var(--white) 100%);
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 60px var(--shadow);
+}
+
+.fabricPattern {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.patternSvg {
+  width: 100%;
+  height: 100%;
+  max-width: 280px;
+  max-height: 280px;
+}
+
+/* Gold border accent */
+.visualBox::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Badge circle */
+.badge {
+  position: absolute;
+  bottom: -20px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: var(--gradient-gold);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(201, 168, 76, 0.4);
+  z-index: 2;
+}
+
+.badgeText {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brown-dark);
+  letter-spacing: 0.5px;
+}
+
+.badgeSub {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--brown-mid);
+}
+
+/* Stats grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.statBox {
+  background: var(--white);
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.statBox::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--gradient-gold);
+}
+
+.statBox:hover {
+  border-color: rgba(201, 168, 76, 0.35);
+  box-shadow: 0 4px 20px var(--shadow);
+}
+
+.statValue {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--gold-dark);
+  line-height: 1;
+}
+
+.statLabel {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--brown-mid);
+}
+
+/* Text column */
+.textCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  font-weight: 600;
+  color: var(--brown-dark);
+  line-height: 1.2;
+  margin-top: 12px;
+}
+
+.subtitle {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-style: italic;
+  color: var(--brown-mid);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  margin-top: 4px;
+}
+
+.body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--brown-mid);
+  line-height: 1.9;
+  margin-bottom: 36px;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--brown-dark);
+  text-decoration: none;
+  border-bottom: 2px solid var(--gold);
+  padding-bottom: 6px;
+  transition: color 0.25s ease, gap 0.25s ease;
+  align-self: flex-start;
+}
+
+.cta:hover {
+  color: var(--gold-dark);
+  gap: 14px;
+}
+
+.ctaArrow {
+  width: 18px;
+  height: 18px;
+  stroke: var(--gold);
+  flex-shrink: 0;
+}
+
+@media (max-width: 960px) {
+  .inner {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+
+  .visual {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .about {
+    padding: 80px 24px;
+  }
+}

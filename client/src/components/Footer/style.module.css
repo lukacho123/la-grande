@@ -1,0 +1,235 @@
+.footer {
+  background: var(--brown-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--gradient-gold);
+}
+
+.inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 80px 40px 60px;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  gap: 60px;
+}
+
+/* Column */
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Brand */
+.logoWrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.logoTexts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.logoName {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--gold-light);
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.logoTagline {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(201, 168, 76, 0.6);
+}
+
+.brandDesc {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+
+.socials {
+  display: flex;
+  gap: 10px;
+}
+
+.socialLink {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  padding: 7px 12px;
+  border-radius: 2px;
+  text-decoration: none;
+  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.socialLink:hover {
+  color: var(--gold-light);
+  border-color: var(--gold);
+  background: rgba(201, 168, 76, 0.08);
+}
+
+/* Column title */
+.colTitle {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+}
+
+/* Link list */
+.linkList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footerLink {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: color 0.25s ease;
+  letter-spacing: 0.3px;
+}
+
+.footerLink:hover {
+  color: var(--gold-light);
+}
+
+/* Contact list */
+.contactList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.contactItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.contactIcon {
+  color: var(--gold);
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.contactLink {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.contactLink:hover {
+  color: var(--gold-light);
+}
+
+.contactText {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.5;
+}
+
+/* Bottom bar */
+.bottom {
+  border-top: 1px solid rgba(201, 168, 76, 0.12);
+}
+
+.bottomInner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 20px 40px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.copyright {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.3px;
+  flex: 1;
+}
+
+.bottomDivider {
+  width: 1px;
+  height: 14px;
+  background: rgba(201, 168, 76, 0.2);
+}
+
+.bottomBrand {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: rgba(201, 168, 76, 0.4);
+}
+
+@media (max-width: 1024px) {
+  .inner {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 40px;
+    padding: 60px 40px 40px;
+  }
+}
+
+@media (max-width: 640px) {
+  .inner {
+    grid-template-columns: 1fr;
+    padding: 48px 24px 32px;
+    gap: 36px;
+  }
+
+  .bottomInner {
+    padding: 16px 24px;
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+
+  .bottomDivider {
+    display: none;
+  }
+}

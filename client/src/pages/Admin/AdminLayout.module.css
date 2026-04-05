@@ -1,0 +1,150 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: #FAF5EC;
+}
+
+.sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: #2C1A0E;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 100;
+}
+
+.sidebarLogo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 20px 24px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.15);
+}
+
+.sidebarBrand {
+  color: #C9A84C;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.nav {
+  flex: 1;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.navLink:hover {
+  background: rgba(201, 168, 76, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.navLinkActive {
+  background: rgba(201, 168, 76, 0.15);
+  color: #C9A84C;
+  border-left: 3px solid #C9A84C;
+  padding-left: 11px;
+}
+
+.navIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 12px 24px;
+  padding: 11px 14px;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+}
+
+.logoutBtn:hover {
+  background: rgba(224, 92, 92, 0.1);
+  color: #e05c5c;
+  border-color: rgba(224, 92, 92, 0.3);
+}
+
+.main {
+  flex: 1;
+  margin-left: 240px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.topBar {
+  background: #fff;
+  border-bottom: 1px solid rgba(44, 26, 14, 0.08);
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.pageTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2C1A0E;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.userBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(44, 26, 14, 0.05);
+  border: 1px solid rgba(44, 26, 14, 0.1);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2C1A0E;
+}
+
+.userDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+}
+
+.content {
+  padding: 32px;
+  flex: 1;
+}
