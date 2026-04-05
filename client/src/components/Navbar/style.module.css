@@ -267,6 +267,8 @@
 
   .navbar {
     padding: 0 20px;
+    background: rgba(44, 26, 14, 0.97);
+    backdrop-filter: blur(10px);
   }
 }
 
