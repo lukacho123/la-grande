@@ -11,6 +11,9 @@ import Testimonials from './components/Testimonials';
 import OrderForm from './components/OrderForm';
 import Footer from './components/Footer';
 import ChatWidget from './components/ChatWidget';
+import PageLoader from './components/PageLoader';
+import CustomCursor from './components/CustomCursor';
+import ScrollObserver from './components/ScrollObserver';
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminLayout from './pages/Admin/AdminLayout';
 import Dashboard from './pages/Admin/Dashboard';
@@ -20,6 +23,9 @@ import Messages from './pages/Admin/Messages';
 function MainSite() {
   return (
     <>
+      <PageLoader />
+      <CustomCursor />
+      <ScrollObserver />
       <Navbar />
       <HeroSlider />
       <FeaturesStrip />

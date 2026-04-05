@@ -85,7 +85,7 @@ export default function Gallery() {
   return (
     <section className={styles.gallery} id="gallery" ref={sectionRef}>
       <div className={styles.header}>
-        <div className={styles.headerInner}>
+        <div className={`${styles.headerInner} reveal`}>
           <span className="section-label">{t('gallery.subtitle')}</span>
           <h2 className={styles.title}>{t('gallery.title')}</h2>
           <div className="gold-divider" />

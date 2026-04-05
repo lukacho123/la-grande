@@ -38,7 +38,7 @@ export default function Testimonials() {
     <section className={styles.testimonials} id="testimonials" ref={sectionRef}>
       <div className={styles.inner}>
         {/* Header */}
-        <div className={styles.header}>
+        <div className={`${styles.header} reveal`}>
           <span className="section-label">{t('testimonials.subtitle')}</span>
           <h2 className={styles.title}>{t('testimonials.title')}</h2>
           <div className="gold-divider" style={{ margin: '16px auto' }} />
