@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './AdminLogin.module.css';
+import { adminSignIn } from './adminApi';
 
 export default function AdminLogin() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,21 +15,10 @@ export default function AdminLogin() {
     setError('');
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Invalid password');
-        setLoading(false);
-        return;
-      }
-      localStorage.setItem('lg_admin_token', data.token);
+      await adminSignIn(email, password);
       navigate('/admin/dashboard');
-    } catch {
-      setError('კავშირის შეცდომა. სცადეთ თავიდან.');
+    } catch (err) {
+      setError(err.message || 'Invalid credentials');
       setLoading(false);
     }
   }
@@ -47,6 +38,19 @@ export default function AdminLogin() {
         </div>
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
+            <label htmlFor="email" className={styles.label}>ელ-ფოსტა</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={styles.input}
+              placeholder="შეიყვანეთ ელ-ფოსტა"
+              required
+              autoFocus
+            />
+          </div>
+          <div className={styles.field}>
             <label htmlFor="password" className={styles.label}>პაროლი</label>
             <input
               id="password"
@@ -56,7 +60,6 @@ export default function AdminLogin() {
               className={styles.input}
               placeholder="შეიყვანეთ პაროლი"
               required
-              autoFocus
             />
           </div>
           {error && <p className={styles.error}>{error}</p>}

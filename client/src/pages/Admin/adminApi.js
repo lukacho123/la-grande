@@ -1,41 +1,50 @@
-const BASE = '/api/admin';
+import { supabase } from '../../lib/supabase'
 
-function getToken() {
-  return localStorage.getItem('lg_admin_token') || '';
+export async function adminSignIn(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) throw error
+  return data
 }
 
-function authHeaders() {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${getToken()}`,
-  };
+export async function adminSignOut() {
+  await supabase.auth.signOut()
 }
 
-export async function adminGet(path) {
-  const res = await fetch(`${BASE}${path}`, {
-    method: 'GET',
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error(`GET ${path} failed: ${res.status}`);
-  return res.json();
+export async function getOrders() {
+  const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+  if (error) throw error
+  return data
 }
 
-export async function adminPost(path, body) {
-  const res = await fetch(`${BASE}${path}`, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`);
-  return res.json();
+export async function updateOrderStatus(id, status) {
+  const { data, error } = await supabase.from('orders').update({ status }).eq('id', id).select().single()
+  if (error) throw error
+  return data
 }
 
-export async function adminPatch(path, body) {
-  const res = await fetch(`${BASE}${path}`, {
-    method: 'PATCH',
-    headers: authHeaders(),
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) throw new Error(`PATCH ${path} failed: ${res.status}`);
-  return res.json();
+export async function getMessages() {
+  const { data, error } = await supabase.from('messages').select('*').order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function markMessageRead(id) {
+  const { data, error } = await supabase.from('messages').update({ read: true }).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function sendReply(clientId, message) {
+  const { error } = await supabase.from('replies').insert({ client_id: clientId, message })
+  if (error) throw error
+}
+
+export async function getStats() {
+  const [{ count: totalOrders }, { count: newOrders }, { count: totalMessages }, { count: unreadMessages }] = await Promise.all([
+    supabase.from('orders').select('*', { count: 'exact', head: true }),
+    supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'new'),
+    supabase.from('messages').select('*', { count: 'exact', head: true }),
+    supabase.from('messages').select('*', { count: 'exact', head: true }).eq('read', false),
+  ])
+  return { totalOrders, newOrders, totalMessages, unreadMessages }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminGet, adminPatch } from './adminApi';
+import { getOrders, updateOrderStatus } from './adminApi';
 import styles from './Orders.module.css';
 
 const TABS = [
@@ -24,7 +24,7 @@ export default function Orders() {
   const [updating, setUpdating] = useState(null);
 
   useEffect(() => {
-    adminGet('/orders')
+    getOrders()
       .then(setOrders)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -33,7 +33,7 @@ export default function Orders() {
   async function handleStatusChange(id, status) {
     setUpdating(id);
     try {
-      const updated = await adminPatch(`/orders/${id}`, { status });
+      const updated = await updateOrderStatus(id, status);
       setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
     } catch (err) {
       alert('Failed to update status: ' + err.message);
@@ -105,13 +105,13 @@ export default function Orders() {
                   <React.Fragment key={o.id}>
                     <tr className={expandedId === o.id ? styles.rowExpanded : ''}>
                       <td className={styles.orderId}>{o.id}</td>
-                      <td className={styles.name}>{o.firstName} {o.lastName}</td>
+                      <td className={styles.name}>{o.first_name} {o.last_name}</td>
                       <td>{o.phone}</td>
                       <td>{o.collection}</td>
                       <td>{o.size}</td>
                       <td className={styles.address}>{o.address}</td>
                       <td><StatusBadge status={o.status} /></td>
-                      <td className={styles.dateCell}>{formatDate(o.createdAt)}</td>
+                      <td className={styles.dateCell}>{formatDate(o.created_at)}</td>
                       <td>
                         <div className={styles.actions}>
                           <select

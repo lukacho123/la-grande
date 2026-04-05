@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import styles from './AdminLayout.module.css';
+import { supabase } from '../../lib/supabase';
 
 const NAV_ITEMS = [
   {
@@ -41,14 +42,23 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [session, setSession] = useState(undefined); // undefined = loading
 
-  const token = localStorage.getItem('lg_admin_token');
-  if (!token) {
-    return <Navigate to="/admin/login" replace />;
-  }
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
-  function handleLogout() {
-    localStorage.removeItem('lg_admin_token');
+  if (session === undefined) return null; // loading
+  if (!session) return <Navigate to="/admin/login" replace />;
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
     navigate('/admin/login');
   }
 

@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { io } from 'socket.io-client';
-import { adminGet } from './adminApi';
+import { supabase } from '../../lib/supabase';
+import { getMessages, markMessageRead, sendReply } from './adminApi';
 import styles from './Messages.module.css';
-
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || '/';
 
 function formatTime(iso) {
   if (!iso) return '';
@@ -27,15 +25,14 @@ function truncate(text, len = 55) {
 }
 
 export default function Messages() {
-  // threads: Map sessionId → { name, phone, messages: [], online: bool, unread: number }
+  // threads: Map clientId → { clientId, name, phone, messages: [], unread: number }
   const [threads, setThreads] = useState({});
-  const [onlineSessions, setOnlineSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [replyText, setReplyText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const socketRef = useRef(null);
+  const channelRef = useRef(null);
   const convEndRef = useRef(null);
   const replyInputRef = useRef(null);
 
@@ -53,14 +50,13 @@ export default function Messages() {
 
   // Helper: merge a new customer message into threads
   const addCustomerMessage = useCallback((msg) => {
-    const sid = msg.sessionId || 'general';
+    const sid = msg.client_id || 'general';
     setThreads(prev => {
       const thread = prev[sid] || {
-        sessionId: sid,
+        clientId: sid,
         name: msg.name || 'Unknown',
         phone: msg.phone || '',
         messages: [],
-        online: true,
         unread: 0,
       };
       const alreadyExists = thread.messages.some(m => m.id === msg.id);
@@ -78,9 +74,9 @@ export default function Messages() {
     });
   }, []);
 
-  // Helper: merge an admin reply echo into threads
-  const addAdminReply = useCallback((sessionId, message, createdAt) => {
-    const sid = sessionId || 'general';
+  // Helper: merge an admin reply into threads
+  const addAdminReply = useCallback((clientId, message, createdAt) => {
+    const sid = clientId || 'general';
     setThreads(prev => {
       const thread = prev[sid];
       if (!thread) return prev;
@@ -88,7 +84,7 @@ export default function Messages() {
         id: `REPLY-${Date.now()}-${Math.random()}`,
         from: 'admin',
         message,
-        createdAt,
+        created_at: createdAt,
       };
       return {
         ...prev,
@@ -102,20 +98,19 @@ export default function Messages() {
 
   useEffect(() => {
     // Load existing messages
-    adminGet('/messages')
+    getMessages()
       .then(msgs => {
         const grouped = {};
         // Sort oldest first for display
-        const sorted = [...msgs].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        const sorted = [...msgs].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
         for (const msg of sorted) {
-          const sid = msg.sessionId || 'general';
+          const sid = msg.client_id || 'general';
           if (!grouped[sid]) {
             grouped[sid] = {
-              sessionId: sid,
+              clientId: sid,
               name: msg.name || 'Unknown',
               phone: msg.phone || '',
               messages: [],
-              online: false,
               unread: 0,
             };
           }
@@ -126,65 +121,24 @@ export default function Messages() {
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
 
-    // Setup socket
-    const token = localStorage.getItem('lg_admin_token') || '';
-    const socket = io(SERVER_URL, { path: '/socket.io' });
-    socketRef.current = socket;
+    // Setup Supabase Realtime
+    const channel = supabase.channel('admin-messages')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        addCustomerMessage(payload.new);
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'replies' }, (payload) => {
+        const reply = payload.new;
+        addAdminReply(reply.client_id, reply.message, reply.created_at);
+      })
+      .subscribe();
 
-    socket.emit('admin:join', { token });
-
-    socket.on('admin:auth_error', () => {
-      setError('Socket authentication failed.');
-    });
-
-    socket.on('session:update', ({ sessions }) => {
-      setOnlineSessions(sessions);
-      setThreads(prev => {
-        const updated = { ...prev };
-        // Mark all offline first
-        for (const sid of Object.keys(updated)) {
-          updated[sid] = { ...updated[sid], online: false };
-        }
-        // Mark online ones
-        for (const s of sessions) {
-          const sid = s.socketId;
-          if (updated[sid]) {
-            updated[sid] = { ...updated[sid], online: true };
-          } else {
-            updated[sid] = {
-              sessionId: sid,
-              name: s.name,
-              phone: s.phone,
-              messages: [],
-              online: true,
-              unread: 0,
-            };
-          }
-        }
-        return updated;
-      });
-    });
-
-    socket.on('customer:message', msg => {
-      addCustomerMessage(msg);
-    });
-
-    socket.on('customer:left', ({ sessionId }) => {
-      setThreads(prev => {
-        if (!prev[sessionId]) return prev;
-        return {
-          ...prev,
-          [sessionId]: { ...prev[sessionId], online: false },
-        };
-      });
-    });
-
-    socket.on('admin:reply:echo', ({ sessionId, message, createdAt }) => {
-      addAdminReply(sessionId, message, createdAt);
-    });
+    channelRef.current = channel;
 
     return () => {
-      socket.disconnect();
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [addCustomerMessage, addAdminReply]);
 
@@ -197,26 +151,20 @@ export default function Messages() {
     });
   }
 
-  function sendReply(e) {
+  async function handleSendReply(e) {
     e.preventDefault();
     const text = replyText.trim();
-    if (!text || !selectedSession || !socketRef.current) return;
-
-    socketRef.current.emit('admin:reply', { sessionId: selectedSession, message: text });
-
-    // Add to local thread immediately (so this admin tab sees it right away)
-    const now = new Date().toISOString();
-    addAdminReply(selectedSession, text, now);
-
+    if (!text || !selectedSession) return;
+    await sendReply(selectedSession, text);
+    // Realtime will echo it back via the replies subscription
     setReplyText('');
     replyInputRef.current?.focus();
   }
 
-  // Build sorted sessions list: online first, then by last message time
+  // Build sorted sessions list: by last message time
   const sessionList = Object.values(threads).sort((a, b) => {
-    if (a.online !== b.online) return a.online ? -1 : 1;
-    const aLast = a.messages[a.messages.length - 1]?.createdAt || '';
-    const bLast = b.messages[b.messages.length - 1]?.createdAt || '';
+    const aLast = a.messages[a.messages.length - 1]?.created_at || '';
+    const bLast = b.messages[b.messages.length - 1]?.created_at || '';
     return bLast.localeCompare(aLast);
   });
 
@@ -231,9 +179,6 @@ export default function Messages() {
       <div className={styles.sessionPanel}>
         <div className={styles.sessionPanelHeader}>
           <span>საუბრები</span>
-          {onlineSessions.length > 0 && (
-            <span className={styles.onlineCount}>{onlineSessions.length} online</span>
-          )}
         </div>
         {sessionList.length === 0 ? (
           <div className={styles.emptyState}>შეტყობინება ჯერ არ არის.</div>
@@ -241,20 +186,16 @@ export default function Messages() {
           <div className={styles.sessionList}>
             {sessionList.map(thread => {
               const lastMsg = thread.messages[thread.messages.length - 1];
-              const isSelected = selectedSession === thread.sessionId;
+              const isSelected = selectedSession === thread.clientId;
               return (
                 <div
-                  key={thread.sessionId}
+                  key={thread.clientId}
                   className={`${styles.sessionItem} ${isSelected ? styles.sessionItemActive : ''}`}
-                  onClick={() => selectSession(thread.sessionId)}
+                  onClick={() => selectSession(thread.clientId)}
                 >
                   <div className={styles.sessionItemTop}>
                     <div className={styles.sessionItemName}>
-                      {thread.online && <span className={styles.onlineDot} title="Online" />}
                       <span>{thread.name}</span>
-                      {!thread.online && thread.messages.length > 0 && (
-                        <span className={styles.offlineBadge}>Offline</span>
-                      )}
                     </div>
                     {thread.unread > 0 && (
                       <span className={styles.unreadBadge}>{thread.unread}</span>
@@ -267,8 +208,8 @@ export default function Messages() {
                       {truncate(lastMsg.message || lastMsg.text || '')}
                     </div>
                   )}
-                  {lastMsg?.createdAt && (
-                    <div className={styles.sessionItemTime}>{formatDate(lastMsg.createdAt)}</div>
+                  {lastMsg?.created_at && (
+                    <div className={styles.sessionItemTime}>{formatDate(lastMsg.created_at)}</div>
                   )}
                 </div>
               );
@@ -286,11 +227,7 @@ export default function Messages() {
             <div className={styles.convHeader}>
               <div className={styles.convHeaderInfo}>
                 <div className={styles.convHeaderName}>
-                  {selectedThread.online && <span className={styles.onlineDot} />}
                   <strong>{selectedThread.name}</strong>
-                  {!selectedThread.online && (
-                    <span className={styles.offlineBadge}>Offline</span>
-                  )}
                 </div>
                 <div className={styles.convHeaderPhone}>{selectedThread.phone}</div>
               </div>
@@ -303,7 +240,7 @@ export default function Messages() {
               {selectedThread.messages.map((msg, i) => {
                 const isAdmin = msg.from === 'admin';
                 const text = msg.message || msg.text || '';
-                const time = msg.createdAt ? formatTime(msg.createdAt) : '';
+                const time = msg.created_at ? formatTime(msg.created_at) : '';
                 return (
                   <div
                     key={msg.id || i}
@@ -317,20 +254,19 @@ export default function Messages() {
               <div ref={convEndRef} />
             </div>
 
-            <form className={styles.replyBar} onSubmit={sendReply}>
+            <form className={styles.replyBar} onSubmit={handleSendReply}>
               <input
                 ref={replyInputRef}
                 type="text"
                 className={styles.replyInput}
-                placeholder={selectedThread.online ? 'პასუხის გაწერა...' : 'კლიენტი offline-შია...'}
+                placeholder="პასუხის გაწერა..."
                 value={replyText}
                 onChange={e => setReplyText(e.target.value)}
-                disabled={!selectedThread.online}
               />
               <button
                 type="submit"
                 className={styles.replyBtn}
-                disabled={!replyText.trim() || !selectedThread.online}
+                disabled={!replyText.trim()}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" fill="currentColor"/>

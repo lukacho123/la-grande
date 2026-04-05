@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { io } from 'socket.io-client';
 import { useLanguage } from '../../context/LanguageContext';
 import styles from './style.module.css';
+import { supabase } from '../../lib/supabase';
 
 const STEPS = { CLOSED: 'closed', INTRO: 'intro', CHAT: 'chat' };
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || '/';
 const STORAGE_KEY = 'lg_chat_session';
 
 // Get or create a persistent clientId
@@ -49,7 +48,7 @@ export default function ChatWidget() {
   const socketRef = useRef(null);
   const stepRef = useRef(step);
 
-  // Keep stepRef in sync so socket callbacks can read current step
+  // Keep stepRef in sync so realtime callbacks can read current step
   useEffect(() => { stepRef.current = step; }, [step]);
 
   // Persist messages to localStorage whenever they change
@@ -59,13 +58,16 @@ export default function ChatWidget() {
     }
   }, [messages, name, phone]);
 
-  // Auto-connect socket if restored session exists
+  // Auto-connect if restored session exists
   useEffect(() => {
     if (saved) {
-      connectSocket(saved.name, saved.phone);
+      connectSupabase(saved.name, saved.phone);
     }
     return () => {
-      socketRef.current?.disconnect();
+      if (socketRef.current) {
+        supabase.removeChannel(socketRef.current);
+        socketRef.current = null;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -88,27 +90,26 @@ export default function ChatWidget() {
     return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 
-  function connectSocket(n, p) {
+  function connectSupabase(n, p) {
     if (socketRef.current) {
-      socketRef.current.disconnect();
+      supabase.removeChannel(socketRef.current);
+      socketRef.current = null;
     }
     const clientId = getClientId();
-    const socket = io(SERVER_URL, { path: '/socket.io' });
-    socketRef.current = socket;
-
-    socket.emit('customer:join', { name: n, phone: p, clientId });
-
-    socket.on('admin:reply', ({ message, createdAt }) => {
-      const time = createdAt
-        ? new Date(createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : now();
-      const newMsg = { from: 'admin', text: message, time };
-      setMessages(prev => [...prev, newMsg]);
-      // Increment unread only when widget is closed
-      if (stepRef.current === STEPS.CLOSED) {
-        setUnread(prev => prev + 1);
-      }
-    });
+    const channel = supabase.channel(`replies-${clientId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'replies',
+        filter: `client_id=eq.${clientId}`
+      }, (payload) => {
+        const reply = payload.new;
+        const time = new Date(reply.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        setMessages(prev => [...prev, { from: 'admin', text: reply.message, time }]);
+        if (stepRef.current === STEPS.CLOSED) setUnread(prev => prev + 1);
+      })
+      .subscribe();
+    socketRef.current = channel;
   }
 
   function openWidget() {
@@ -127,25 +128,34 @@ export default function ChatWidget() {
       return;
     }
     setInputError('');
-    connectSocket(name.trim(), phone.trim());
+    connectSupabase(name.trim(), phone.trim());
     const greeting = { from: 'bot', text: c.botGreeting, time: now() };
     setMessages([greeting]);
     setStep(STEPS.CHAT);
   }
 
-  function sendMessage(e) {
+  async function sendMessage(e) {
     e.preventDefault();
     const text = inputVal.trim();
-    if (!text || !socketRef.current) return;
+    if (!text) return;
     const userMsg = { from: 'user', text, time: now() };
     setMessages(prev => [...prev, userMsg]);
     setInputVal('');
-    socketRef.current.emit('customer:message', { message: text });
+    await supabase.from('messages').insert({
+      id: `MSG-${Date.now()}`,
+      client_id: getClientId(),
+      name,
+      phone,
+      message: text,
+      read: false,
+    });
   }
 
   function clearSession() {
-    socketRef.current?.disconnect();
-    socketRef.current = null;
+    if (socketRef.current) {
+      supabase.removeChannel(socketRef.current);
+      socketRef.current = null;
+    }
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem('lg_chat_client_id');
     setName('');

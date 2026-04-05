@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import styles from './style.module.css';
+import { supabase } from '../../lib/supabase';
 
 const initialForm = {
   firstName: '',
@@ -66,20 +67,23 @@ export default function OrderForm() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+      const { error } = await supabase.from('orders').insert({
+        id: `LG-${Date.now()}`,
+        first_name: form.firstName,
+        last_name: form.lastName,
+        phone: form.phone,
+        email: form.email,
+        collection: form.collection,
+        size: form.size,
+        address: form.address,
+        notes: form.notes,
+        status: 'new',
       });
-      const data = await res.json();
-      if (data.success) {
-        setSubmitted(true);
-        setForm(initialForm);
-      } else {
-        setError('Something went wrong. Please try again.');
-      }
+      if (error) throw error;
+      setSubmitted(true);
+      setForm(initialForm);
     } catch (err) {
-      setError('Network error. Please try again.');
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminGet } from './adminApi';
+import { getStats, getOrders } from './adminApi';
 import styles from './Dashboard.module.css';
 
 const STATUS_KA = { new: 'ახალი', processing: 'მუშავდება', done: 'დასრულებული' };
@@ -27,7 +27,7 @@ export default function Dashboard() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    Promise.all([adminGet('/stats'), adminGet('/orders')])
+    Promise.all([getStats(), getOrders()])
       .then(([s, o]) => {
         setStats(s);
         setOrders(o.slice(0, 5));
@@ -115,10 +115,10 @@ export default function Dashboard() {
                 {orders.map((o) => (
                   <tr key={o.id}>
                     <td className={styles.orderId}>{o.id}</td>
-                    <td>{o.firstName} {o.lastName}</td>
+                    <td>{o.first_name} {o.last_name}</td>
                     <td>{o.collection}</td>
                     <td><StatusBadge status={o.status} /></td>
-                    <td className={styles.date}>{formatDate(o.createdAt)}</td>
+                    <td className={styles.date}>{formatDate(o.created_at)}</td>
                   </tr>
                 ))}
               </tbody>
